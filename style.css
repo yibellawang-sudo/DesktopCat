@@ -1,0 +1,24 @@
+#desktop-cat {
+  position: fixed;
+  width: 128px;
+  height: 128px;
+  cursor: grab;
+  z-index: 999999;
+  pointer-events: auto;
+  user-select: none;
+}
+
+#desktop-cat:active {
+  cursor: grabbing;
+}
+
+#desktop-cat-sprite {
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-size: auto 100%;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  transition: transform 0.1s ease;
+}
