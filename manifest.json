@@ -2,7 +2,6 @@
   "manifest_version": 3,
   "name": "Desktop Cat",
   "version": "1.0",
-  "description": "A cute cat that lives on your screen!",
   "permissions": ["storage"],
   "action": {
     "default_popup": "popup.html",

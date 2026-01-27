@@ -1,3 +1,5 @@
+//UPDATE TO PROVIDE REMINDERS
+
 //extension URL for loading images
 const getImageUrl = (filename) => {
   return chrome.runtime.getURL("assets/" + filename); 
@@ -145,19 +147,18 @@ function initCat() {
     
     if (catState.isSitting) {
       setAnimation('sitting');
+      catState.velocityX = 0;
       catState.idleTimer++;
       
       //lie down after sitting
-      if (catState.idleTimer > 3600) { 
-        if (Math.random() < 0.3) {
-          setAnimation('lying');
-          catState.idleTimer = 0;
-        }
+      if (catState.idleTimer > 3000) { 
+        setAnimation('lying');
+        catState.idleTimer = 0;
       }
       return;
     }
     //randomly sit
-    if (Math.abs(catState.velocityX) < 0.5 && Math.random() < 0.005) {
+    if (Math.abs(catState.velocityX) < 0.5 && Math.random() < 0.0005) {
       catState.isSitting = true;
       catState.velocityX = 0;
       catState.idleTimer = 0;
@@ -166,12 +167,12 @@ function initCat() {
       //get up after a while
       setTimeout(() => {
         catState.isSitting = false;
-      }, 30000 + Math.random() * 30000); 
+      }, 15000 + Math.random() * 15000); 
       return;
     }
     
     //randomly change direction
-    if (Math.random() < 0.02) {
+    if (Math.random() < 0.0005) {
       catState.velocityX = (Math.random() - 0.5) * 3;
     }
     //update facing direction
@@ -190,12 +191,12 @@ function initCat() {
     //move
     catState.x += catState.velocityX;
     
-    //gravity simu
-    if (catState.y < window.innerHeight - 280) {
+    //gravity sim
+    if (catState.y < window.innerHeight - 180) {
       catState.velocityY += 0.5;
       catState.y += catState.velocityY;
     } else {
-      catState.y = window.innerHeight - 280;
+      catState.y = window.innerHeight - 180;
       catState.velocityY = 0;
     }
     

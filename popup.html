@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <style>
     body {
-      width: 250px;
+      width: 350px;
       padding: 20px;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
       margin: 0;
@@ -16,6 +16,11 @@
       color: #333;
     }
     
+    h2 {
+      font-size: 18px;
+      margin: 20px 0 10px 0;
+      color: #555
+    }
     .toggle-container {
       display: flex;
       align-items: center;
@@ -70,7 +75,7 @@
     }
     
     input:checked + .slider {
-      background-color: #4CAF50;
+      background-color: #75c5f7;
     }
     
     input:checked + .slider:before {
@@ -84,10 +89,129 @@
       color: #666;
     }
     
-    .cat-emoji {
-      font-size: 48px;
-      text-align: center;
+    /* To do list styles */
+    .todo-input-container {
+      display: flex;
+      gap: 8px; 
+      margin-bottom: 10px;
+    }
+
+    #todoInput {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+    }
+    #todoInput {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .reminder-type-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    #reminderType {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    #reminderTime {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+
+    }
+    #addTodoButton {
+      padding: 8px 16px;
+      background-color: #75c5f7;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    #addTodoBtn:hover {
+      background: #3a95db
+    }
+
+    .reminder-frequency {
       margin: 10px 0;
+    }
+
+    #reminderFrequency {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .todo-list {
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+
+    .todo-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px;
+      background: #f9f9f9;
+      border-radius: 4px;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+
+    .todo-text {
+      flex: 1;
+      margin-left: 8px;
+    }
+
+    .todo-reminder-info {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 6px;
+    }
+    .delete-btn {
+      background: #ff9e9e;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .delete-btn:hover {
+      background: #d13434;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 20px;
+      color: #999;
+      font-size: 14px;
+    }
+    .hidden {
+      display: none;
     }
   </style>
 </head>
@@ -103,6 +227,43 @@
   </div>
   
   <div class="status" id="status">Cat is active on all pages</div>
+
+  <h2>Reminders</h2>
+  <div class="todo-input-container">
+    <div class="input-row">
+      <input type="text" id="todoInput" placeholder="Add a reminder!">
+    </div>
+
+    <div class="reminder-type-row">
+      <select id="reminderType">
+        <option value="interval">Repeat every...</option>
+        <option value="time">At specific time</option>
+      </select>
+
+      <select id="reminderInterval">
+        <option value="10">10 minutes</option>
+        <option value="15">15 minutes</option>
+        <option value="20">20 minutes</option>
+        <option value="25">25 minutes</option>
+        <option value="30">30 minutes</option>
+        <option value="35">35 minutes</option>
+        <option value="40">40 minutes</option>
+        <option value="45">45 minutes</option>
+        <option value="50">50 minutes</option>
+        <option value="55">55 minutes</option>
+        <option value="60">60 minutes</option>
+      </select>
+
+      <input type="time" id="reminderTime" class="hidden">
+
+      <button id="addTodoBtn">Add</button>
+    </div>
+  </div>
+
+  <div class="todo-list" id="todoList">
+    <div class="empty-state">No reminders yet!</div>
+  </div>>
+      
   
   <script src="popup.js"></script>
 </body>
