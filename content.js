@@ -1,4 +1,161 @@
-//UPDATE TO PROVIDE REMINDERS
+//update so the cat says the msg instead on it appearing. cat sits down?
+//REMINDERS
+let reminderData = {
+  todos: []
+};
+
+let cat, catState, setAnimation; 
+
+//speech bubble
+const speechBubble = document.createElement('div');
+speechBubble.id = 'cat-speech-bubble';
+speechBubble.style.cssText = `
+  position: fixed;
+  background: white;
+  border: 3px solid #333;
+  border-radius: 15px;
+  padding: 12px 16px;
+  font-family: 'Crows Ink', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  font-size: 16px;
+  color: #333;
+  max-width: 250px;
+  display: none;
+  z-index: 2147483646;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  pointer-events: none;
+`;
+
+//wait for body to exist before appending
+function initSpeechBubble() {
+  document.body.appendChild(speechBubble);
+
+  const bubbleTail = document.createElement('div');
+  bubbleTail.style.cssText = `
+    position: absolute;
+    bottom: -10px;
+    left: 20px;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid #333;
+  `;
+  speechBubble.appendChild(bubbleTail);
+
+  const bubbleTailInner = document.createElement('div');
+  bubbleTailInner.style.cssText = `
+    position: absolute;
+    bottom: 2px;
+    left: -8px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid white;
+  `;
+  bubbleTail.appendChild(bubbleTailInner);
+}
+
+//show reminder
+function showReminder(text) {
+  if (!cat) return; // Safety check
+  
+  const catRect = cat.getBoundingClientRect();
+  
+  speechBubble.innerHTML = ''; //clear
+  speechBubble.textContent = text;
+  
+  //re add tail
+  const bubbleTail = document.createElement('div');
+  bubbleTail.style.cssText = `
+    position: absolute;
+    bottom: -10px;
+    left: 20px;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid #333;
+  `;
+  speechBubble.appendChild(bubbleTail);
+
+  const bubbleTailInner = document.createElement('div');
+  bubbleTailInner.style.cssText = `
+    position: absolute;
+    bottom: 2px;
+    left: -8px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid white;
+  `;
+  bubbleTail.appendChild(bubbleTailInner);
+  
+  speechBubble.style.display = 'block';
+  speechBubble.style.left = (catRect.left + catRect.width / 2 - 125) + 'px';
+  speechBubble.style.bottom = (window.innerHeight - catRect.top + 20) + 'px';
+  
+  if (setAnimation) {
+    setAnimation('happy');
+  }
+  
+  setTimeout(() => {
+    speechBubble.style.display = 'none';
+    if (catState && !catState.isDragging && !catState.isNapping && setAnimation) {
+      setAnimation('sitting');
+    }
+  }, 8000);
+}
+
+function checkReminders() {
+  if (reminderData.todos.length === 0) return;
+  
+  const now = Date.now();
+  const currentTime = new Date();
+  const currentHour = currentTime.getHours();
+  const currentMinute = currentTime.getMinutes();
+  
+  reminderData.todos.forEach(todo => {
+    if (todo.reminderType === 'interval') {
+      //interval-based reminders
+      const timeSinceLastReminder = now - (todo.lastReminded || todo.created);
+      const intervalMs = todo.interval * 60 * 1000;
+      
+      if (timeSinceLastReminder >= intervalMs) {
+        showReminder(`Don't forget: ${todo.text} 🐾`);
+        todo.lastReminded = now;
+        
+        //update storage
+        chrome.storage.sync.set({ todos: reminderData.todos });
+      }
+    } else {
+      //time-based reminders
+      const [todoHour, todoMinute] = todo.time.split(':').map(Number);
+      
+      if (currentHour === todoHour && currentMinute === todoMinute && !todo.reminded) {
+        showReminder(`Reminder: ${todo.text}`);
+        todo.reminded = true;
+        
+        chrome.storage.sync.set({ todos: reminderData.todos });
+      }
+      
+      if ((currentHour === 0 && currentMinute === 0) || 
+          (currentHour > todoHour || (currentHour === todoHour && currentMinute > todoMinute))) {
+        if (currentHour === 0 && currentMinute === 0) {
+          todo.reminded = false;
+        }
+      }
+    }
+  });
+}
+
+chrome.storage.sync.get(['todos'], function(result) {
+  if (result.todos) {
+    reminderData.todos = result.todos;
+    console.log('Loaded todos:', reminderData.todos);
+  }
+});
 
 //extension URL for loading images
 const getImageUrl = (filename) => {
@@ -46,9 +203,11 @@ const SPRITE_CONFIG = {
 
 //wait for the page to be ready
 function initCat() {
+  console.log('Initializing cat...');
+  initSpeechBubble();
   
   //create cat element
-  const cat = document.createElement('div');
+  cat = document.createElement('div'); 
   cat.id = 'desktop-cat';
   cat.style.pointerEvents = 'auto'; 
   
@@ -58,7 +217,7 @@ function initCat() {
   document.body.appendChild(cat);
 
   //cat state
-  let catState = {
+  catState = { 
     x: window.innerWidth / 2,
     y: window.innerHeight / 2,
     velocityX: 2,
@@ -119,7 +278,8 @@ function initCat() {
   }
 
   //change anim
-  function setAnimation(animName) {
+  //change anim
+  setAnimation = function(animName) { 
     if (catState.currentAnimation !== animName) {
       catState.currentAnimation = animName;
       catState.currentFrame = 0;
@@ -127,7 +287,6 @@ function initCat() {
       updateSpriteFrame();
     }
   }
-  
   function updateCatPosition() {
     cat.style.left = catState.x + 'px';
     cat.style.top = catState.y + 'px';
@@ -286,8 +445,16 @@ function initCat() {
   chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     if (request.action === 'enableCat') {
       cat.style.display = 'block';
+      console.log('Cat enabled');
     } else if (request.action === 'disableCat') {
       cat.style.display = 'none';
+      console.log('Cat disabled');
+    } else if (request.action === 'updateTodos') {
+      reminderData.todos = request.todos;
+      console.log('Todos updated:', request.todos);
+    } else if (request.action === 'updateReminderFrequency') {
+      reminderData.frequency = request.frequency;
+      console.log('Reminder frequency updated:', request.frequency);
     }
   });
 
@@ -302,6 +469,7 @@ function initCat() {
     randomWalk();
     advanceFrame();
     updateSpriteFrame();
+    checkReminders();
     requestAnimationFrame(gameLoop);
   }
 
