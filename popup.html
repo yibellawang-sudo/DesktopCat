@@ -231,6 +231,29 @@
     .hidden {
       display: none;
     }
+
+    .cat-selector {
+      margin: 15px 0;
+      padding: 12px;
+      background: #f5f5f5;
+      border-radius: 8px;
+    }
+
+    .cat-selector label {
+      display: block;
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 8px;
+    }
+
+    #catBreed {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: 'Crows Ink', Arial, sans-serif;
+    }
   </style>
 </head>
 <body>
@@ -243,8 +266,20 @@
       <span class="slider"></span>
     </label>
   </div>
-  
   <div class="status" id="status">Cat is active on all pages</div>
+
+  <h2>Choose Your Cat!</h2>
+
+  <div class="cat-selector">
+    <label for="catBreed">Cat Species:</label>
+    <select id="catBreed">
+      <option value="ragdoll">Ragdoll</option>
+      <option value="calico">Calico</option>
+      <option value="orange">Orange</option>
+      <option value="black">Black</option>
+      <option value="tabby">Tabby</option>
+    </select>
+  </div>
 
   <h2>Reminders</h2>
   <div class="todo-input-container">

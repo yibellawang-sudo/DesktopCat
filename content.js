@@ -1,12 +1,65 @@
-//update so the cat says the msg instead on it appearing. cat sits down?
-//REMINDERS
+//REMINDER DATA
 let reminderData = {
   todos: []
 };
+let cat, catSprite, catState, setAnimation; 
+let currentBreed = 'ragdoll';
 
-let cat, catState, setAnimation; 
+//IMG HELPER
+const getImageUrl = (filename) => {
+  return chrome.runtime.getURL("assets/" + filename); 
+};
 
-//speech bubble
+//SPRITE CONFIG
+
+function getSpriteConfig(breed) {
+  return {
+    frameWidth: 256,
+    frameHeight: 256,
+    
+    animations: {
+      sitting: {
+        file: `${breed}/sitting.png`,
+        frames: 1,
+        fps: 0
+      },
+      walking: {
+        file: `${breed}/walking seq.png`,
+        frames: 2,
+        fps: 3
+      },
+      sleeping: {
+        file: `${breed}/sleep seq.png`,
+        frames: 5,
+        fps: 3
+      },
+      grabbed: {
+        file: `${breed}/pickup.png`,
+        frames: 1,
+        fps: 0
+      },
+      lying: {
+        file: `${breed}/cat lying.png`,
+        frames: 1,
+        fps: 0
+      },
+      sad: {
+        file: `${breed}/sad.png`, 
+        frames: 1,
+        fps: 0
+      },
+      peek: {
+        file: `${breed}/peek.png`, 
+        frames: 1,
+        fps: 0
+      }
+    }
+  };
+}
+
+let SPRITE_CONFIG = getSpriteConfig(currentBreed);
+
+//SPEECH BUBBELE
 const speechBubble = document.createElement('div');
 speechBubble.id = 'cat-speech-bubble';
 speechBubble.style.cssText = `
@@ -15,7 +68,7 @@ speechBubble.style.cssText = `
   border: 3px solid #333;
   border-radius: 15px;
   padding: 12px 16px;
-  font-family: 'Crows Ink', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  font-family: 'Coin', sans-serif;
   font-size: 16px;
   color: #333;
   max-width: 250px;
@@ -25,12 +78,9 @@ speechBubble.style.cssText = `
   pointer-events: none;
 `;
 
-//wait for body to exist before appending
-function initSpeechBubble() {
-  document.body.appendChild(speechBubble);
-
-  const bubbleTail = document.createElement('div');
-  bubbleTail.style.cssText = `
+function buildBubbleTail(bubble) {
+  const tail = document.createElement('div');
+  tail.style.cssText = `
     position: absolute;
     bottom: -10px;
     left: 20px;
@@ -40,10 +90,8 @@ function initSpeechBubble() {
     border-right: 10px solid transparent;
     border-top: 10px solid #333;
   `;
-  speechBubble.appendChild(bubbleTail);
-
-  const bubbleTailInner = document.createElement('div');
-  bubbleTailInner.style.cssText = `
+  const tailInner = documnet.createElement('div');
+  tailInner.style.cssText = `
     position: absolute;
     bottom: 2px;
     left: -8px;
@@ -53,61 +101,257 @@ function initSpeechBubble() {
     border-right: 8px solid transparent;
     border-top: 8px solid white;
   `;
-  bubbleTail.appendChild(bubbleTailInner);
+  tail.appendChild(tailInner);
+  bubble.appendChild(tail);
 }
 
-//show reminder
+function initSpeechBubble() {
+  document.boby.appendChild(speechBubble);
+  buildBubbleTail(speechBubble);
+}
+
+//SNOOZE BTN
+let snoozedReminder = null;
+let snoozeTimeout = null;
+
+function addSnoozeBtn(bubble, text) {
+  const snooxeBtn = document.createElement('button');
+  snoozeBtn.textContent = '💤 Snooze 10min';
+  snoozeBtn.style.cssText = `
+    display: clock;
+    margin-top: 8px;
+    padding = 4px 10px;
+    background = #75c5f7;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'Coin, sans-serif;
+    pointer-events: auto;
+  `;
+  snoozeBtn.addEventListener('click', (e) =>{
+    e.stopPropagation();
+    bubble.style.display = 'none';
+    catState.isSitting = false;
+
+    if(snoozeTimeout) clearTimeout(snoozeTimeout);
+    snoozeTimeout = setTimeout(() => {
+      showReminder(text);
+    }, 10*60*1000);
+  });
+  bubble.appendChild(snoozeBtn);
+}
+
+//SHOW REMINDER
 function showReminder(text) {
   if (!cat) return; // Safety check
   
-  const catRect = cat.getBoundingClientRect();
+  // Make cat sit down and stop moving
+  catState.isSitting = true;
+  catState.velocityX = 0;
+  setAnimation('sitting');
   
   speechBubble.innerHTML = ''; //clear
-  speechBubble.textContent = text;
+  buildBubbleTail(speechBubble);
   
-  //re add tail
-  const bubbleTail = document.createElement('div');
-  bubbleTail.style.cssText = `
-    position: absolute;
-    bottom: -10px;
-    left: 20px;
-    width: 0;
-    height: 0;
-    border-left: 10px solid transparent;
-    border-right: 10px solid transparent;
-    border-top: 10px solid #333;
-  `;
-  speechBubble.appendChild(bubbleTail);
-
-  const bubbleTailInner = document.createElement('div');
-  bubbleTailInner.style.cssText = `
-    position: absolute;
-    bottom: 2px;
-    left: -8px;
-    width: 0;
-    height: 0;
-    border-left: 8px solid transparent;
-    border-right: 8px solid transparent;
-    border-top: 8px solid white;
-  `;
-  bubbleTail.appendChild(bubbleTailInner);
+  //text container
+  const textContainer = document.createElement('span');
+  speechBubble.appendChild(textContainer);
   
   speechBubble.style.display = 'block';
-  speechBubble.style.left = (catRect.left + catRect.width / 2 - 125) + 'px';
-  speechBubble.style.bottom = (window.innerHeight - catRect.top + 20) + 'px';
   
-  if (setAnimation) {
-    setAnimation('happy');
+  function updateBubblePosition() {
+    if (!cat) return;
+    const catRect = cat.getBoundingClientRect();
+    speechBubble.style.left = (catRect.left + catRect.width / 2 - 90) + 'px';
+    speechBubble.style.top = (catRect.top - speechBubble.offsetHeight -10) + 'px';
   }
+
+  updateBubblePosition();
   
-  setTimeout(() => {
-    speechBubble.style.display = 'none';
-    if (catState && !catState.isDragging && !catState.isNapping && setAnimation) {
-      setAnimation('sitting');
+  //update position continuously while visible
+  const positionInterval = setInterval(updateBubblePosition, 50);
+  
+  let currentIndex = 0;
+  
+  function typeNextCharacter() {
+    if (currentIndex < text.length) {
+      textContainer.textContent += text[currentIndex++];
+      updateBubblePosition(); 
+      setTimeout(typeNextCharacter, 50);
+    } else {
+      // Add snooze button after typing finishes
+      addSnoozeButton(speechBubble, text);
+      updateBubblePosition();
+
+      setTimeout(() => {
+        setAnimation('happy');
+        
+        //hide bubble & resume normal behavior after 5 seconds
+        setTimeout(() => {
+          speechBubble.style.display = 'none';
+          clearInterval(positionInterval); //stop updating position
+          catState.isSitting = false;
+          if (catState && !catState.isDragging && !catState.isNapping && setAnimation) {
+            setAnimation('sitting');
+          }
+        }, 5000);
+      }, 500);
     }
-  }, 8000);
+  }
+  typeNextCharacter();
 }
 
+//FLOATING HEART
+function spawnHeart() {
+  if (!cat) return;
+  const heart = document.createElement('img');
+  heart.src = getImageUrl('heart.png');
+  heart.style.cssText = `
+    position: fixed;
+    width: 32px;
+    height: 32px;
+    image-rendering: pixelated;
+    pointer-events: none;
+    z-index: 2147483645;
+    transition: opacity 1s ease, transform 1s ease;
+  `;
+  const catRect = cat.getBoundingClientRect();
+  heart.style.left = (catRect.left + catRect.width / 2 - 16) + 'px';
+  heart.style.top  = (catRect.top - 10) + 'px';
+  document.body.appendChild(heart);
+ 
+  requestAnimationFrame(() => {
+    heart.style.opacity = '0';
+    heart.style.transform = 'translateY(-40px) scale(1.4)';
+  });
+ 
+  setTimeout(() => heart.remove(), 1100);
+}
+
+// TREAT
+let treatEl = null;
+let catIsEating = false;
+ 
+function spawnTreat(x, y) {
+  if (treatEl) return; //only one treat at a time
+ 
+  treatEl = document.createElement('img');
+  treatEl.src = getImageUrl('fish.png');
+  treatEl.style.cssText = `
+    position: fixed;
+    width: 64px;
+    height: 64px;
+    left: ${x - 32}px;
+    top:  ${y - 32}px;
+    image-rendering: pixelated;
+    pointer-events: none;
+    z-index: 2147483645;
+  `;
+  document.body.appendChild(treatEl);
+}
+ /*
+function checkTreatProximity() {
+  if (!treatEl || catIsEating) return;
+ 
+  const catCenterX = catState.x + 128;
+  const catCenterY = catState.y + 128;
+  const treatX = parseFloat(treatEl.style.left) + 32;
+  const treatY = parseFloat(treatEl.style.top)  + 32;
+  const dist = Math.hypot(catCenterX - treatX, catCenterY - treatY);
+ 
+  if (dist < 80) {
+    catIsEating = true;
+    catState.isSitting = true;
+    catState.velocityX = 0;
+    setAnimation('eating');
+ 
+    setTimeout(() => {
+      if (treatEl) { treatEl.remove(); treatEl = null; }
+      catIsEating = false;
+      catState.isSitting = false;
+      catState.energy = Math.min(100, catState.energy + 40);
+      setAnimation('happy');
+      setTimeout(() => { if (!catState.isDragging) setAnimation('sitting'); }, 1000);
+    }, 1500);
+  }
+} */
+ 
+//SAD
+let petCount = 0;
+let lastPetTime = Date.now();
+ 
+function getMoodLevel() {
+  // 0 = very sad, 1 = neutral, above 1 = happy
+  const minutesSincePet = (Date.now() - lastPetTime) / 60000;
+  if (minutesSincePet > 30) return 0;
+  if (minutesSincePet > 10) return 0.5;
+  return 1;
+}
+ 
+function applyMoodFilter() {
+  if (!catSprite) return;
+  const mood = getMoodLevel();
+  if (mood === 0) {
+    catSprite.style.filter = 'grayscale(70%) brightness(0.85)';
+  } else if (mood === 0.5) {
+    catSprite.style.filter = 'grayscale(30%)';
+  } else {
+    catSprite.style.filter = 'none';
+  }
+}
+ 
+//CURSOR AVOIDANCE
+let mouseX = -999, mouseY = -999;
+document.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+});
+ 
+function checkCursorAvoidance() {
+  if (catState.isDragging || catState.isNapping || catState.isSitting || catIsEating) return;
+ 
+  const catCenterX = catState.x + 64;
+  const catCenterY = catState.y + 64;
+  const dist = Math.hypot(catCenterX - mouseX, catCenterY - mouseY);
+ 
+  if (dist < 100) {
+    //scoot away from cursor
+    const dx = catCenterX - mouseX;
+    catState.velocityX = dx > 0 ? 3 : -3;
+    setAnimation('scared');
+  }
+}
+ 
+//PEEK
+let isPeeking = false;
+let peekTimeout = null;
+ 
+function tryPeek() {
+  if (isPeeking || catState.isDragging || catState.isNapping || catState.isSitting || catIsEating) return;
+  if (Math.random() > 0.0002) return; //rare trigger
+ 
+  isPeeking = true;
+  const peekFromLeft = Math.random() > 0.5;
+ 
+  //cat off-screen
+  catState.velocityX = 0;
+  catState.x = peekFromLeft ? -220 : window.innerWidth - 36;
+  catState.y = window.innerHeight - 180;
+  catState.facingRight = peekFromLeft;
+  setAnimation('peek');
+ 
+  if (peekTimeout) clearTimeout(peekTimeout);
+  peekTimeout = setTimeout(() => {
+    isPeeking = false;
+    //walk back onto screen
+    catState.velocityX = peekFromLeft ? 2 : -2;
+    setAnimation('walking');
+  }, 3000 + Math.random() * 2000);
+}
+
+//REMINDERS FUNCTIONALITY
 function checkReminders() {
   if (reminderData.todos.length === 0) return;
   
@@ -123,7 +367,7 @@ function checkReminders() {
       const intervalMs = todo.interval * 60 * 1000;
       
       if (timeSinceLastReminder >= intervalMs) {
-        showReminder(`Don't forget: ${todo.text} 🐾`);
+        showReminder(`${todo.text}`);
         todo.lastReminded = now;
         
         //update storage
@@ -134,7 +378,7 @@ function checkReminders() {
       const [todoHour, todoMinute] = todo.time.split(':').map(Number);
       
       if (currentHour === todoHour && currentMinute === todoMinute && !todo.reminded) {
-        showReminder(`Reminder: ${todo.text}`);
+        showReminder(`${todo.text}`);
         todo.reminded = true;
         
         chrome.storage.sync.set({ todos: reminderData.todos });
@@ -156,50 +400,6 @@ chrome.storage.sync.get(['todos'], function(result) {
     console.log('Loaded todos:', reminderData.todos);
   }
 });
-
-//extension URL for loading images
-const getImageUrl = (filename) => {
-  return chrome.runtime.getURL("assets/" + filename); 
-};
-//cracker
-//sprite config per animation 
-const SPRITE_CONFIG = {
-  frameWidth: 256,
-  frameHeight: 256,
-  
-  animations: {
-    sitting: {
-      file: 'cat sitting.png',
-      frames: 1,
-      fps: 0
-    },
-    walking: {
-      file: 'cat walking seq.png',
-      frames: 2,
-      fps: 3
-    },
-    sleeping: {
-      file: 'cat sleeping seq.png',
-      frames: 5,
-      fps: 3
-    },
-    happy: {
-      file: 'cat happy seq.png',
-      frames: 8,
-      fps: 12
-    },
-    grabbed: {
-      file: 'cat picked up.png',
-      frames: 1,
-      fps: 0
-    },
-    lying: {
-      file: 'cat lying.png',
-      frames: 1,
-      fps: 0
-    }
-  }
-};
 
 //wait for the page to be ready
 function initCat() {
@@ -277,7 +477,6 @@ function initCat() {
     }
   }
 
-  //change anim
   //change anim
   setAnimation = function(animName) { 
     if (catState.currentAnimation !== animName) {
@@ -455,13 +654,26 @@ function initCat() {
     } else if (request.action === 'updateReminderFrequency') {
       reminderData.frequency = request.frequency;
       console.log('Reminder frequency updated:', request.frequency);
+    } else if (request.action === 'updateCatBreed') {
+      currentBreed = request.breed;
+      SPRITE_CONFIG = getSpriteConfig(currentBreed);
+      updateSpriteFrame(); 
+      console.log('Cat breed updated:', currentBreed);
     }
   });
 
   //check init state
-  chrome.storage.sync.get(['catEnabled'], function(result) {
+  chrome.storage.sync.get(['catEnabled', 'catBreed'], function(result) {
     const isEnabled = result.catEnabled !== false; 
     cat.style.display = isEnabled ? 'block' : 'none';
+    
+    //load saved breed
+    if (result.catBreed) {
+      currentBreed = result.catBreed;
+      SPRITE_CONFIG = getSpriteConfig(currentBreed);
+      updateSpriteFrame();
+      console.log('Loaded cat breed:', currentBreed);
+    }
   });
 
   //main animation loop

@@ -1,14 +1,12 @@
 {
   "manifest_version": 3,
   "name": "Desktop Cat",
-  "version": "1.0",
+  "version": "1.3",
   "permissions": ["storage"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
-      "16": "assets/cat sitting.png",
-      "48": "assets/cat sitting.png",
-      "128": "assets/cat sitting.png"
+      "128": "assets/icon.png"
     }
   },
   "content_scripts": [
@@ -22,7 +20,14 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "assets/*"
+        "assets/*",
+        "assets/ragdoll/*",
+        "assets/calico/*",
+        "assets/orange/*",
+        "assets/black/*",
+        "assets/tabby/*",
+        "assets/lucky-coin-font/*",
+        "assets/crows-ink-font/*"
       ],
       "matches": ["<all_urls>"]
     }

@@ -2,10 +2,15 @@
 let todos = [];
 
 //load saved state
-chrome.storage.sync.get(['catEnabled', 'todos'], function(result) {  
+chrome.storage.sync.get(['catEnabled', 'todos', 'catBreed'], function(result) {
   const isEnabled = result.catEnabled !== false; 
   document.getElementById('catToggle').checked = isEnabled;
   updateStatus(isEnabled);
+  
+  //load cat breed
+  if (result.catBreed) {
+    document.getElementById('catBreed').value = result.catBreed;
+  }
   
   // Load existing todos
   if (result.todos) {
@@ -46,6 +51,25 @@ document.getElementById('todoInput').addEventListener('keypress', function(e) {
   if (e.key === 'Enter') {
     addTodo();
   }
+});
+
+//cat breed change
+document.getElementById('catBreed').addEventListener('change', function(e) {
+  const selectedBreed = e.target.value;
+  
+  chrome.storage.sync.set({ catBreed: selectedBreed }, function() {
+    console.log('Cat breed saved:', selectedBreed);
+  });
+  
+  //update cat on all tabs
+  chrome.tabs.query({}, function(tabs) {
+    tabs.forEach(tab => {
+      chrome.tabs.sendMessage(tab.id, {
+        action: 'updateCatBreed',
+        breed: selectedBreed
+      }).catch(() => {});
+    });
+  });
 });
 
 function addTodo() {
