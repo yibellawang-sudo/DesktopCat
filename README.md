@@ -28,7 +28,7 @@ The cat will sit down and type your reminder!
 
 ## Installation
 
-This extension is available on the [Chrome Web Store](#). You can also load it manually:
+This extension is available on Chrome Web Store with the same name, though some beta functions are not up-to-date there. You can also load a later version manually:
 
 1. Go to `chrome://extensions` and enable **Developer mode**
 2. Click **Load unpacked** and select this folder
